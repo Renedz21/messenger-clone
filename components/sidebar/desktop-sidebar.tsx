@@ -3,8 +3,14 @@
 import useRoutes from "@/hooks/use-routes"
 import { useState } from "react"
 import DesktopItem from "./desktop-item"
+import { User } from "@prisma/client"
+import Avatar from "@/components/avatar"
 
-const DesktopSidebar = () => {
+interface DesktopSidebarProps {
+    currentUser: User
+}
+
+const DesktopSidebar = ({ currentUser }: DesktopSidebarProps) => {
 
     const routes = useRoutes()
     const [isOpen, setIsOpen] = useState(false)
@@ -24,6 +30,16 @@ const DesktopSidebar = () => {
                         />
                     ))}
                 </ul>
+            </nav>
+            <nav className="mt-4 flex flex-col justify-between items-center">
+                <div
+                    onClick={() => setIsOpen(true)}
+                    className="cursor-pointer hover:opacity-75 transition"
+                >
+                    <Avatar
+                        user={currentUser!}
+                    />
+                </div>
             </nav>
         </div>
     )
