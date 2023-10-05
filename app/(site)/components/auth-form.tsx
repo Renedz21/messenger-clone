@@ -2,20 +2,32 @@
 
 import Button from '@/components/button'
 import Input from '@/components/input'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useForm, FieldValues, SubmitHandler } from 'react-hook-form'
 import AuthSocialButton from './auth-social-button'
 import { toast } from 'sonner'
 import { Github, Chrome } from 'lucide-react'
 import axios from 'axios'
-import { signIn } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 type Variant = 'LOGIN' | 'REGISTER'
 
 const AuthForm = () => {
 
+    const session = useSession()
+    const router = useRouter()
     const [variant, setVariant] = useState<Variant>('LOGIN')
     const [isLoading, setIsLoading] = useState(false)
+
+    useEffect(() => {
+        if (session?.status === 'authenticated') {
+            router.push('/users')
+        }
+    }, [
+        session?.status,
+        router
+    ])
 
     const toggleVariant = useCallback(() => {
         if (variant === 'LOGIN') {
@@ -41,11 +53,13 @@ const AuthForm = () => {
 
     const onSubmit: SubmitHandler<FieldValues> = async (data) => {
         setIsLoading(true)
-        console.log(data)
 
         if (variant === 'REGISTER') {
             axios.post('/api/register', data)
-                .then(() => toast.success('User created'))
+                .then(() => {
+                    signIn('credentials', data)
+                    toast.success('User created')
+                })
                 .catch(() => toast.error("Error"))
                 .finally(() => setIsLoading(false))
         } else {
@@ -60,6 +74,8 @@ const AuthForm = () => {
 
                     if (callback?.ok || !callback?.error) {
                         toast.success('Logged in!')
+                        router.push('/users')
+
                     }
                 })
                 .finally(() => setIsLoading(false))
@@ -70,6 +86,16 @@ const AuthForm = () => {
         setIsLoading(true)
 
         //Next auth social login
+        signIn(provider, { redirect: false })
+            .then((callback) => {
+                if (callback?.error) {
+                    toast.error('Invalid Credentials')
+                }
+
+                if (callback?.ok || !callback?.error) {
+                    toast.success('Logged in!')
+                }
+            })
     }
 
     return (
